@@ -47,21 +47,30 @@ def defuzzifikasi(rules):
     denominator = sum(mu for mu, _ in rules)
     return numerator / denominator if denominator != 0 else 0
 
+# Menentukan kualitas pelayanan dari nilai servis
+def kualitas_pelayanan(servis):
+    if servis >= 60:
+        return "Baik"
+    elif servis >= 30:
+        return "Sedang"
+    else:
+        return "Buruk"
+
 # Fungsi utama fuzzy system
 def sistem_fuzzy(data):
     hasil = []
     for i, row in data.iterrows():
-        servis = row['Pelayanan']  
-        harga = row['harga']       
+        servis = row['Pelayanan']
+        harga = row['harga']
         fz_servis = fuzzifikasi_servis(servis)
         fz_harga = fuzzifikasi_harga(harga)
         rules = inferensi(fz_servis, fz_harga)
         skor = defuzzifikasi(rules)
         hasil.append({
-            'ID': row['id Pelanggan'],
-            'Kualitas Servis': servis,
-            'Harga': harga,
-            'Skor Kelayakan': skor
+            'ID_Restoran': row['id Pelanggan'],
+            'Skor': round(skor, 2),
+            'Kualitas Pelayanan': kualitas_pelayanan(servis),
+            'Harga': harga
         })
     return pd.DataFrame(hasil)
 
@@ -72,6 +81,14 @@ if __name__ == "__main__":
     print(df.columns)
 
     hasil = sistem_fuzzy(df)
-    hasil_terbaik = hasil.sort_values(by='Skor Kelayakan', ascending=False).head(5)
+    hasil_terbaik = hasil.sort_values(by='Skor', ascending=False).head(5)
+
+    # Print ke terminal seperti format contoh
+    print("\n5 Restoran Terbaik di Kota Bandung:")
+    print(f"{'ID':<10}{'Skor':<10}{'Pelayanan':<10}{'Harga'}")
+    for idx, row in hasil_terbaik.iterrows():
+        print(f"{row['ID_Restoran']:<10}{row['Skor']:<10}{row['Kualitas Pelayanan']:<10}{row['Harga']}")
+
+    # Simpan ke file
     hasil_terbaik.to_excel('peringkat.xlsx', index=False)
-    print("5 restoran terbaik telah disimpan di peringkat.xlsx")
+    print("\nFile 'peringkat.xlsx' berhasil dibuat dengan Top-5 restoran.")
